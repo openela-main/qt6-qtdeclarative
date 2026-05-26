@@ -1,0 +1,57 @@
+From 1f35339b03fcb8787028e1301012a559328815fb Mon Sep 17 00:00:00 2001
+From: Eskil Abrahamsen Blomfeldt <eskil.abrahamsen-blomfeldt@qt.io>
+Date: Tue, 9 Dec 2025 07:39:32 +0100
+Subject: [PATCH] VectorImage: Sanitize source string used in output
+
+The source string is used as an object name in output, so we sanitize
+it to make sure it does not contain illegal characters. SVG already
+mandates a limited character set here, but rather than trust the parser
+we sanitize before passing to the generator, similar to what the Lottie
+visitor does.
+
+Fixes: QTBUG-142556
+Pick-to: 6.8
+Change-Id: I0684e726ab69a0735dcb5f91369b090d58a90b7b
+Reviewed-by: Eirik Aavitsland <eirik.aavitsland@qt.io>
+(cherry picked from commit cfc3e783fed4e876c2c29d008b5ef43c547b16b7)
+(cherry picked from commit ce82a78b0d10703f9b172f9afeb3d5e832e05074)
+Reviewed-by: Qt Cherry-pick Bot <cherrypick_bot@qt-project.org>
+---
+ .../generator/qsvgvisitorimpl.cpp             | 20 ++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/src/quickvectorimage/generator/qsvgvisitorimpl.cpp b/src/quickvectorimage/generator/qsvgvisitorimpl.cpp
+index 87ce1e80..fa04daea 100644
+--- a/src/quickvectorimage/generator/qsvgvisitorimpl.cpp
++++ b/src/quickvectorimage/generator/qsvgvisitorimpl.cpp
+@@ -1101,9 +1101,27 @@ void QSvgVisitorImpl::visitDocumentNodeEnd(const QSvgTinyDocument *node)
+     m_generator->generateRootNode(info);
+ }
+
++static QString scrub(const QString &raw)
++{
++    QString res(raw.left(80));
++
++    if (!res.isEmpty()) {
++        constexpr QLatin1StringView legalSymbols("_-.:"); // Only valid SVG id characters
++        qsizetype i = 0;
++        do {
++            if (res.at(i).isLetterOrNumber() || legalSymbols.contains(res.at(i)))
++                i++;
++            else
++                res.remove(i, 1);
++        } while (i < res.size());
++    }
++
++    return res;
++}
++
+ void QSvgVisitorImpl::fillCommonNodeInfo(const QSvgNode *node, NodeInfo &info)
+ {
+-    info.nodeId = node->nodeId();
++    info.nodeId = scrub(node->nodeId());
+     info.typeName = node->typeName();
+     info.isDefaultTransform = node->style().transform.isDefault();
+     info.transform.setDefaultValue(QVariant::fromValue(!info.isDefaultTransform
+--
+2.48.1

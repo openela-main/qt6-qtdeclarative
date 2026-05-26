@@ -17,7 +17,7 @@
 Summary: Qt6 - QtDeclarative component
 Name:    qt6-%{qt_module}
 Version: 6.10.1
-Release: 1%{?dist}
+Release: 1%{?dist}.1
 
 License: LGPL-3.0-only OR GPL-3.0-only WITH Qt-GPL-exception-1.0
 Url:     http://www.qt.io
@@ -37,6 +37,10 @@ Source5: qv4global_p-multilib.h
 ## upstream patches
 # https://codereview.qt-project.org/c/qt/qtdeclarative/+/678924
 Patch0:  qtdeclarative-quickshapes-make-module-public.patch
+
+# CVE-2025-14576
+# https://codereview.qt-project.org/c/qt/qtdeclarative/+/697273
+Patch1:  VectorImage-Sanitize-source-string-used-in-output.patch
 
 ## upstreamable patches
 
@@ -769,6 +773,10 @@ make check -k -C tests ||:
 %endif
 
 %changelog
+* Wed May 20 2026 Jan Grulich <jgrulich@redhat.com> - 6.10.1-1.1
+- VectorImage: sanitize source string used in output (CVE-2025-14576)
+  Resolves: RHEL-173494
+
 * Mon Nov 24 2025 Jan Grulich <jgrulich@redhat.com> - 6.10.1-1
 - 6.10.1
   Resolves: RHEL-109197
